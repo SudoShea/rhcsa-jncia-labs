@@ -1,0 +1,110 @@
+# ==============================================================================
+# File        : .gitignore
+# Description : Git ignore rules for RHCSA & JNCIA engineering lab repository
+# Author      : SudoShea
+# Version     : 1.0.0
+# Licence     : MIT
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Virtual Machine, Disk Images & ISOs (KVM / QEMU / Libvirt / GNS3)
+# ------------------------------------------------------------------------------
+*.qcow2
+*.qcow2.bz2
+*.img
+*.iso
+*.raw
+*.vmdk
+*.vhd
+*.vhdx
+*.vdi
+*.fd
+*.nvram
+
+# ------------------------------------------------------------------------------
+# 2. Network Emulation Engine States (GNS3 & Containerlab)
+# ------------------------------------------------------------------------------
+# GNS3 runtime states, node directories, and dynamic logs
+project-files/
+*.gns3project.zip
+gns3_controller.conf
+*.dynamips
+*.net
+
+# Containerlab runtime dynamic topologies and generated lab configs
+clab-*/
+.clab.yml.swp
+*.clab.yml.bak
+
+# ------------------------------------------------------------------------------
+# 3. Security Credentials, Secrets & Keys
+# ------------------------------------------------------------------------------
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.csr
+vault_password*
+.vault_pass
+*.vault
+.env
+.env.*
+*.secret
+
+# SSH private keys created during local KVM/lab provisioning
+id_rsa_lab*
+id_ed25519_lab*
+
+# ------------------------------------------------------------------------------
+# 4. Ansible, Python & Node.js Build Artefacts
+# ------------------------------------------------------------------------------
+# Python runtime and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+
+# Ansible execution caches and retry files
+.ansible/
+*.retry
+*.log
+
+# Node.js dependencies and linter caches
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.prettiercache
+.eslintcache
+
+# ------------------------------------------------------------------------------
+# 5. OS, IDE & System Temp Files
+# ------------------------------------------------------------------------------
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor swap files and workspace directories
+*.swp
+*.swo
+*~
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+.idea/
+*.sublime-workspace
+
+# System temp outputs
+tmp/
+temp/
+*.tmp
+
+# ------------------------------------------------------------------------------
+# 6. Local Environment Inventory Overrides
+# ------------------------------------------------------------------------------
+inventory.local.ini

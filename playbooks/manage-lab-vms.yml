@@ -1,0 +1,127 @@
+# ==============================================================================
+# Playbook    : playbooks/manage-lab-vms.yml
+# Description : KVM/libvirt VM Lifecycle & Snapshot Management on RHEL Server
+# Author      : SudoShea
+# Version     : 1.0.0
+# Licence     : MIT
+# ==============================================================================
+---
+- name: Manage KVM Lab Virtual Machines
+  hosts: home_server
+  become: true
+  gather_facts: false
+
+  vars:
+    # Default VM Allocation
+    vm_name: "rhcsa-node1"
+    vm_ram_mb: 4096
+    vm_vcpus: 2
+    vm_disk_gb: 20
+    vm_state: "present"        # Values: present, started, stopped, restarted, absent
+    snapshot_name: ""          # Name required if creating/restoring snapshots
+
+    # Server Storage & Network Paths
+    libvirt_image_dir: "/var/lib/libvirt/images"
+    iso_image_path: "/var/lib/libvirt/images/rhel-10-x86_64-boot.iso"
+    bridge_network: "default"
+
+  tasks:
+    # --------------------------------------------------------------------------
+    # 1. State Inspection
+    # --------------------------------------------------------------------------
+    - name: Inspect existing KVM virtual machine domains
+      community.libvirt.virt_info:
+      register: libvirt_vms
+
+    - name: Set domain existence fact
+      ansible.builtin.set_fact:
+        vm_exists: "{{ vm_name in libvirt_vms.parameter }}"
+
+    # --------------------------------------------------------------------------
+    # 2. Provisioning (vm_state: present)
+    # --------------------------------------------------------------------------
+    - name: Provision new RHEL 10 virtual machine
+      when:
+        - vm_state == 'present'
+        - not vm_exists
+      block:
+        - name: Allocate qcow2 sparse disk image
+          ansible.builtin.command:
+            cmd: "qemu-img create -f qcow2 {{ libvirt_image_dir }}/{{ vm_name }}.qcow2 {{ vm_disk_gb }}G"
+            creates: "{{ libvirt_image_dir }}/{{ vm_name }}.qcow2"
+
+        - name: Execute virt-install domain creation
+          ansible.builtin.command:
+            cmd: >-
+              virt-install
+              --name="{{ vm_name }}"
+              --ram="{{ vm_ram_mb }}"
+              --vcpus="{{ vm_vcpus }}"
+              --cpu=host-passthrough
+              --os-variant=rhel10.0
+              --disk path="{{ libvirt_image_dir }}/{{ vm_name }}.qcow2",format=qcow2,bus=virtio
+              --network network="{{ bridge_network }}",model=virtio
+              --graphics vnc,listen=0.0.0.0
+              --noautoconsole
+              --location="{{ iso_image_path }}"
+              --extra-args="console=ttyS0,115200n8 serial"
+          register: virt_install_result
+          changed_when: virt_install_result.rc == 0
+
+    # --------------------------------------------------------------------------
+    # 3. Power Lifecycle Controls (started, stopped, restarted)
+    # --------------------------------------------------------------------------
+    - name: Manage VM power state
+      community.libvirt.virt:
+        name: "{{ vm_name }}"
+        state: "{{ vm_state }}"
+      when:
+        - vm_exists
+        - vm_state in ['started', 'stopped', 'restarted']
+
+    # --------------------------------------------------------------------------
+    # 4. Snapshot Management
+    # --------------------------------------------------------------------------
+    - name: Create VM checkpoint snapshot
+      ansible.builtin.command:
+        cmd: "virsh snapshot-create-as --domain {{ vm_name }} --name {{ snapshot_name }} --description 'Lab Checkpoint'"
+      when:
+        - vm_exists
+        - snapshot_name | length > 0
+        - vm_state == 'snapshot_create'
+      register: snap_create_res
+      changed_when: snap_create_res.rc == 0
+
+    - name: Restore VM checkpoint snapshot
+      ansible.builtin.command:
+        cmd: "virsh snapshot-revert --domain {{ vm_name }} --snapshotname {{ snapshot_name }}"
+      when:
+        - vm_exists
+        - snapshot_name | length > 0
+        - vm_state == 'snapshot_restore'
+      register: snap_revert_res
+      changed_when: snap_revert_res.rc == 0
+
+    # --------------------------------------------------------------------------
+    # 5. Teardown & Cleanup (vm_state: absent)
+    # --------------------------------------------------------------------------
+    - name: Destroy and undefine virtual machine domain
+      when:
+        - vm_exists
+        - vm_state == 'absent'
+      block:
+        - name: Force stop running VM instance
+          community.libvirt.virt:
+            name: "{{ vm_name }}"
+            state: destroyed
+          failed_when: false
+
+        - name: Undefine libvirt domain definition
+          community.libvirt.virt:
+            name: "{{ vm_name }}"
+            command: undefine
+
+        - name: Remove qcow2 disk image file
+          ansible.builtin.file:
+            path: "{{ libvirt_image_dir }}/{{ vm_name }}.qcow2"
+            state: absent
