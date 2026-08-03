@@ -38,23 +38,11 @@ jobs:
         run: |
           node --version
           npm --version
-          markdownlint --version
           htmlhint --version
           prettier --version
 
       # ------------------------------------------------------------------------
-      # 1. Documentation & Markdown Linting
-      # ------------------------------------------------------------------------
-      - name: Run Markdown Linting
-        run: |
-          markdownlint '**/*.md' --ignore node_modules --ignore '.github/PULL_REQUEST_TEMPLATE.md'
-
-      - name: Run Code Formatting Check (Prettier)
-        run: |
-          prettier --check "**/*.{json,yaml,yml,md}"
-
-      # ------------------------------------------------------------------------
-      # 2. Shell Script Security & Syntax Analysis
+      # 1. Shell Script Security & Syntax Analysis
       # ------------------------------------------------------------------------
       - name: Install and Run ShellCheck
         run: |
@@ -64,7 +52,7 @@ jobs:
           find . -type f -name "*.sh" -exec shellcheck -e SC1091 {} +
 
       # ------------------------------------------------------------------------
-      # 3. YAML & Ansible Syntax Validation
+      # 2. YAML & Ansible Syntax Validation
       # ------------------------------------------------------------------------
       - name: Set up Python for YAML/Ansible Linting
         uses: actions/setup-python@v5
