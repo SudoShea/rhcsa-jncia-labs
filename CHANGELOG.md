@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-08-17
+
+### Added
+- **JNCIA-Junos (JN0-106) Complete Curriculum:**
+  - **`01-networking-fundamentals`:** Subnetting exercises, decimal-to-binary conversions, IPv6 compression rules, Layer 2/3 packet traversal logic, and longest match routing lookup evaluation.
+  - **`02-junos-architecture`:** Control plane (RE) vs forwarding plane (PFE) separation, modular FreeBSD daemons (`rpd`, `mgd`, `dcd`), and transit vs exception traffic mechanics.
+  - **`03-user-interfaces`:** Operational vs configuration CLI modes, output pipe filters (`match`, `except`, `count`, `display set`), candidate staging, commit/rollback operations, baseline `.set` configs, and `save`/`load` file management.
+  - **`04-configuration-basics`:** Day 0 initialisation, root authentication, built-in and custom RBAC login classes, IPv4/IPv6 interface properties, syslog, NTP, traceoptions debugging, and reusable configuration groups (`apply-groups`).
+  - **`05-system-maintenance`:** System health monitoring, storage partition cleanup (`request system storage cleanup`), software upgrade syntax, graceful power control, and console root password recovery.
+  - **`06-routing-fundamentals`:** `inet.0` routing table evaluation, default route preferences, IPv4/IPv6 static routes, floating static routes via qualified next-hops, `discard`/`reject` targets, and `virtual-router` routing instances.
+  - **`07-firewall-filters`:** Import/export routing policies, prefix-lists, `route-filter` match types, stateless firewall filter terms, action modifiers (`count`, `log`), `lo0.0` Routing Engine protection, and Unicast RPF (uRPF).
+
+### Fixed
+- **Directory Hierarchy & Lab Naming:**
+  - Moved `lab-01-control-vs-forwarding-plane.md` into `02-junos-architecture/labs/`.
+  - Renamed duplicate `lab-01-interfaces-and-system-services.md` to `lab-02-interfaces-and-system-services.md` inside `04-configuration-basics/labs/`.
+
+### Changed
+- **Root Documentation:** Updated root `README.md` to reflect the completed domain objectives across all 7 JNCIA-Junos modules.
+
+---
+
 ## [1.0.0] - 2026-08-03
 
 ### Added
