@@ -1,8 +1,8 @@
 # ==============================================================================
 # Playbook    : playbooks/manage-lab-vms.yml
-# Description : KVM/libvirt VM Lifecycle & Snapshot Management on RHEL Server
+# Description : Automated KVM/libvirt VM Lifecycle & Kickstart Provisioning
 # Author      : SudoShea
-# Version     : 1.0.0
+# Version     : 1.1.0
 # Licence     : MIT
 # ==============================================================================
 ---
@@ -17,25 +17,27 @@
     vm_ram_mb: 4096
     vm_vcpus: 2
     vm_disk_gb: 20
-    vm_state: "present"        # Values: present, started, stopped, restarted, absent
+    vm_state: "present"         # Values: present, started, running, stopped, shutdown, restarted, absent, snapshot_create, snapshot_restore
     snapshot_name: ""          # Name required if creating/restoring snapshots
-
-    # Server Storage & Network Paths
-    libvirt_image_dir: "/var/lib/libvirt/images"
-    iso_image_path: "/var/lib/libvirt/images/rhel-10-x86_64-boot.iso"
-    bridge_network: "default"
 
   tasks:
     # --------------------------------------------------------------------------
-    # 1. State Inspection
+    # 1. State Inspection & Prerequisites
     # --------------------------------------------------------------------------
+    - name: Ensure libvirt network is active and configured for autostart
+      community.libvirt.virt_net:
+        name: "{{ bridge_network | default('default') }}"
+        state: active
+        autostart: true
+
     - name: Inspect existing KVM virtual machine domains
-      community.libvirt.virt_info:
-      register: libvirt_vms
+      community.libvirt.virt:
+        command: list_vms
+      register: vm_list
 
     - name: Set domain existence fact
       ansible.builtin.set_fact:
-        vm_exists: "{{ vm_name in libvirt_vms.parameter }}"
+        vm_exists: "{{ vm_name in (vm_list.list_vms | default([])) }}"
 
     # --------------------------------------------------------------------------
     # 2. Provisioning (vm_state: present)
@@ -45,12 +47,20 @@
         - vm_state == 'present'
         - not vm_exists
       block:
+        - name: Deploy Kickstart file to libvirt host
+          ansible.builtin.copy:
+            src: files/rhcsa-node.ks
+            dest: "{{ libvirt_dir | default('/var/lib/libvirt/images') }}/rhcsa-node.ks"
+            owner: root
+            group: root
+            mode: '0644'
+
         - name: Allocate qcow2 sparse disk image
           ansible.builtin.command:
-            cmd: "qemu-img create -f qcow2 {{ libvirt_image_dir }}/{{ vm_name }}.qcow2 {{ vm_disk_gb }}G"
-            creates: "{{ libvirt_image_dir }}/{{ vm_name }}.qcow2"
+            cmd: "qemu-img create -f qcow2 {{ libvirt_dir | default('/var/lib/libvirt/images') }}/{{ vm_name }}.qcow2 {{ vm_disk_gb }}G"
+            creates: "{{ libvirt_dir | default('/var/lib/libvirt/images') }}/{{ vm_name }}.qcow2"
 
-        - name: Execute virt-install domain creation
+        - name: Execute automated virt-install domain creation
           ansible.builtin.command:
             cmd: >-
               virt-install
@@ -59,25 +69,42 @@
               --vcpus="{{ vm_vcpus }}"
               --cpu=host-passthrough
               --os-variant=rhel10.0
-              --disk path="{{ libvirt_image_dir }}/{{ vm_name }}.qcow2",format=qcow2,bus=virtio
-              --network network="{{ bridge_network }}",model=virtio
+              --disk path="{{ libvirt_dir | default('/var/lib/libvirt/images') }}/{{ vm_name }}.qcow2",format=qcow2,bus=virtio
+              --network network="{{ bridge_network | default('default') }}",model=virtio
               --graphics vnc,listen=0.0.0.0
               --noautoconsole
-              --location="{{ iso_image_path }}"
-              --extra-args="console=ttyS0,115200n8 serial"
+              --location="{{ iso_image_path | default('/var/lib/libvirt/images/rhel-10.2-x86_64-dvd.iso') }}"
+              --initrd-inject="{{ libvirt_dir | default('/var/lib/libvirt/images') }}/rhcsa-node.ks"
+              --extra-args="inst.ks=file:/rhcsa-node.ks console=ttyS0,115200n8 serial"
           register: virt_install_result
           changed_when: virt_install_result.rc == 0
 
     # --------------------------------------------------------------------------
-    # 3. Power Lifecycle Controls (started, stopped, restarted)
+    # 3. Power Lifecycle Controls
     # --------------------------------------------------------------------------
-    - name: Manage VM power state
+    - name: Start VM instance
       community.libvirt.virt:
         name: "{{ vm_name }}"
-        state: "{{ vm_state }}"
+        state: running
       when:
         - vm_exists
-        - vm_state in ['started', 'stopped', 'restarted']
+        - vm_state in ['started', 'running']
+
+    - name: Gracefully shut down VM instance
+      community.libvirt.virt:
+        name: "{{ vm_name }}"
+        state: shutdown
+      when:
+        - vm_exists
+        - vm_state in ['stopped', 'shutdown']
+
+    - name: Reboot VM instance
+      community.libvirt.virt:
+        name: "{{ vm_name }}"
+        command: reboot
+      when:
+        - vm_exists
+        - vm_state == 'restarted'
 
     # --------------------------------------------------------------------------
     # 4. Snapshot Management
@@ -87,7 +114,7 @@
         cmd: "virsh snapshot-create-as --domain {{ vm_name }} --name {{ snapshot_name }} --description 'Lab Checkpoint'"
       when:
         - vm_exists
-        - snapshot_name | length > 0
+        - (snapshot_name | default('')) | length > 0
         - vm_state == 'snapshot_create'
       register: snap_create_res
       changed_when: snap_create_res.rc == 0
@@ -97,7 +124,7 @@
         cmd: "virsh snapshot-revert --domain {{ vm_name }} --snapshotname {{ snapshot_name }}"
       when:
         - vm_exists
-        - snapshot_name | length > 0
+        - (snapshot_name | default('')) | length > 0
         - vm_state == 'snapshot_restore'
       register: snap_revert_res
       changed_when: snap_revert_res.rc == 0
@@ -123,5 +150,5 @@
 
         - name: Remove qcow2 disk image file
           ansible.builtin.file:
-            path: "{{ libvirt_image_dir }}/{{ vm_name }}.qcow2"
+            path: "{{ libvirt_dir | default('/var/lib/libvirt/images') }}/{{ vm_name }}.qcow2"
             state: absent

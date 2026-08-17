@@ -1,0 +1,45 @@
+# ====================================================================
+# Module 07 Complete Baseline Configuration for vSRX-1
+# ====================================================================
+
+set system host-name vSRX-1
+
+# Interface Configuration
+set interfaces ge-0/0/0 unit 0 family inet address 192.168.1.1/24
+set interfaces ge-0/0/1 unit 0 family inet address 10.0.0.1/30
+set interfaces ge-0/0/1 unit 0 family inet rpf-check
+set interfaces lo0 unit 0 family inet address 1.1.1.1/32
+
+# Policy Options & Prefix Lists
+set policy-options prefix-list INTERNAL-NETS 192.168.1.0/24
+set policy-options prefix-list INTERNAL-NETS 10.0.0.0/24
+
+set policy-options policy-statement EXPORT-TO-OSPF term PERMIT-INTERNAL from protocol direct
+set policy-options policy-statement EXPORT-TO-OSPF term PERMIT-INTERNAL from prefix-list INTERNAL-NETS
+set policy-options policy-statement EXPORT-TO-OSPF term PERMIT-INTERNAL then accept
+set policy-options policy-statement EXPORT-TO-OSPF term BLOCK-PRIVATE from route-filter 172.16.0.0/12 orlonger
+set policy-options policy-statement EXPORT-TO-OSPF term BLOCK-PRIVATE then reject
+set policy-options policy-statement EXPORT-TO-OSPF term PERMIT-STATIC from protocol static
+set policy-options policy-statement EXPORT-TO-OSPF term PERMIT-STATIC then accept
+
+# Firewall Filter Definitions
+set firewall filter PROTECT-INBOUND term ALLOW-ICMP from protocol icmp
+set firewall filter PROTECT-INBOUND term ALLOW-ICMP then count icmp-counter
+set firewall filter PROTECT-INBOUND term ALLOW-ICMP then accept
+set firewall filter PROTECT-INBOUND term ALLOW-SSH from protocol tcp
+set firewall filter PROTECT-INBOUND term ALLOW-SSH from destination-port 22
+set firewall filter PROTECT-INBOUND term ALLOW-SSH then log
+set firewall filter PROTECT-INBOUND term ALLOW-SSH then accept
+set firewall filter PROTECT-INBOUND term ALLOW-LAN from source-address 192.168.1.0/24
+set firewall filter PROTECT-INBOUND term ALLOW-LAN then accept
+
+set firewall filter PROTECT-RE term ALLOW-MGMT-SSH from source-address 192.168.1.0/24
+set firewall filter PROTECT-RE term ALLOW-MGMT-SSH from protocol tcp
+set firewall filter PROTECT-RE term ALLOW-MGMT-SSH from destination-port 22
+set firewall filter PROTECT-RE term ALLOW-MGMT-SSH then accept
+set firewall filter PROTECT-RE term DEFAULT-DISCARD then count re-dropped-packets
+set firewall filter PROTECT-RE term DEFAULT-DISCARD then discard
+
+# Apply Filters
+set interfaces ge-0/0/0 unit 0 family inet filter input PROTECT-INBOUND
+set interfaces lo0 unit 0 family inet filter input PROTECT-RE

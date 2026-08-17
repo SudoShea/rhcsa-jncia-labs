@@ -1,0 +1,38 @@
+# ====================================================================
+# Module 04 Complete Baseline Configuration Snippet for vSRX-1
+# ====================================================================
+
+# System Hostname & Password
+set system host-name vSRX-1
+set system domain-name lab.internal
+set system time-zone UTC
+
+# Login Classes
+set system login class junior-admin permissions [ configure interface system ]
+set system login class junior-admin deny-configuration "system root-authentication"
+
+# Local User Accounts
+set system login user auditor class read-only
+set system login user noc-tech class operator
+set system login user jsmith class junior-admin
+
+# Physical & Logical Interfaces
+set interfaces ge-0/0/0 unit 0 description "LAN Segment"
+set interfaces ge-0/0/0 unit 0 family inet address 192.168.1.1/24
+set interfaces ge-0/0/0 unit 0 family inet6 address 2001:db8:1::1/64
+
+set interfaces ge-0/0/1 unit 0 description "P2P Link to vSRX-2"
+set interfaces ge-0/0/1 unit 0 family inet address 10.0.0.1/30
+
+set interfaces lo0 unit 0 description "Router ID Loopback"
+set interfaces lo0 unit 0 family inet address 1.1.1.1/32
+
+# System Logging & NTP
+set system ntp server 192.168.1.254 prefer
+set system syslog file auth-events change-service any
+set system syslog host 192.168.1.50 any notice
+
+# Configuration Groups
+set groups GLOBAL-BASELINE system domain-name lab.internal
+set groups GLOBAL-BASELINE system time-zone UTC
+set apply-groups GLOBAL-BASELINE

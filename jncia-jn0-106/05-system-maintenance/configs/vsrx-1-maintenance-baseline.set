@@ -1,0 +1,16 @@
+# ====================================================================
+# Module 05 Baseline Configuration Snippet for Maintenance & Diagnostics
+# ====================================================================
+
+set system host-name vSRX-1
+set system location "Data Centre 1, Rack 02"
+set system services ssh root-login allow
+
+# Diagnostic Loopback & Interfaces
+set interfaces lo0 unit 0 family inet address 1.1.1.1/32
+set interfaces ge-0/0/0 unit 0 family inet address 192.168.1.1/24
+set interfaces ge-0/0/1 unit 0 family inet address 10.0.0.1/30
+
+# System Logging Target for Diagnostic Monitoring
+set system syslog file messages any notice
+set system syslog file interactive-commands interactive-commands any

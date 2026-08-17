@@ -1,0 +1,5 @@
+# Test Snippet for 'load set' / 'load merge' Exercises
+set system location "Data Centre 1, Rack 04"
+set system domain-name lab.internal
+set system time-zone UTC
+set system login message "Maintenance Window Active"

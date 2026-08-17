@@ -23,10 +23,13 @@ Hands-on laboratories, Ansible automation playbooks, and topology definitions de
 * **Mock Exam:** A comprehensive 3-hour practice exam covering all domain objectives.
 
 ### Track 2: JNCIA-Junos (JN0-106) — Junos OS
-* **Junos Architecture:** Separation of Control Plane (Routing Engine) and Forwarding Plane (Packet Forwarding Engine).
-* **CLI Mechanics & Commit Model:** Active vs Candidate configuration, `commit check`, `commit confirmed`, and `rollback`.
-* **Routing & Interfaces:** `inet.0` routing table evaluation, static routes, default routes, single-area OSPF.
-* **Firewall Filters:** Stateless term match conditions (`from`/`then`), policing, and protecting `lo0.0`.
+* **Networking Fundamentals:** OSI/TCP-IP models, IPv4/IPv6 subnetting, binary conversions, L2 vs L3 traversal, and longest match routing logic.
+* **Junos Architecture:** Control Plane (Routing Engine) vs Forwarding Plane (Packet Forwarding Engine), modular FreeBSD daemons, and transit vs exception traffic.
+* **CLI Mechanics & User Interfaces:** Operational vs Configuration modes, pipe output filters, candidate configuration staging, `commit check/confirmed`, `rollback`, and file management (`save`/`load`).
+* **Configuration Basics:** Day 0 initialisation, root password enforcement, RBAC login classes, user accounts, IPv4/IPv6 interface properties, syslog, NTP, traceoptions, and configuration groups.
+* **Operational Maintenance:** System health inspection, error tracking, storage cleanup, software upgrade syntax, graceful power management, and console root password recovery.
+* **Routing Fundamentals:** `inet.0` routing table evaluation, route preference, IPv4/IPv6 static routing, floating static routes via qualified next-hops, discard/reject routes, and `virtual-router` instances.
+* **Routing Policy & Firewall Filters:** Import/export routing policies, prefix-lists, stateless firewall filters, action modifiers (`count`/`log`), `lo0.0` Routing Engine protection, and Unicast RPF (uRPF).
 
 ---
 

@@ -1,0 +1,13 @@
+# ====================================================================
+# Module 06 Baseline Configuration for vSRX-2
+# ====================================================================
+
+set system host-name vSRX-2
+
+# Interface Setup
+set interfaces ge-0/0/1 unit 0 family inet address 10.0.0.2/30
+set interfaces ge-0/0/1 unit 0 family inet6 address 2001:db8:10::2/64
+set interfaces lo0 unit 0 family inet address 2.2.2.2/32
+
+# Static Routing Baseline
+set routing-options static route 1.1.1.1/32 next-hop 10.0.0.1

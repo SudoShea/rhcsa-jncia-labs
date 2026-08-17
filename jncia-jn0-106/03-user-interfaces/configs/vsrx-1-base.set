@@ -1,0 +1,5 @@
+# Module 03 Baseline Configuration
+set system host-name vSRX-1
+set system location "Home Lab - Rack 1"
+set system services ssh root-login allow
+set system login announcement "NOTICE: Authorised Access Only - JNCIA Lab System"
